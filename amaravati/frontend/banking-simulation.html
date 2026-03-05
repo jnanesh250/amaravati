@@ -1,0 +1,1026 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Banking Secure System - QKD Simulation</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.7.77/Tone.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-color: #020617;
+            --card-bg-color: rgba(15, 23, 42, 0.6);
+            --border-color: rgba(255, 255, 255, 0.1);
+            --glow-color-cyan: #06b6d4;
+        }
+
+        html { scroll-behavior: smooth; }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: radial-gradient(ellipse at center, #082f49 0%, #020617 70%);
+            color: #cbd5e1;
+            overflow-x: hidden;
+        }
+
+        #neural-canvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+        }
+
+        #banking-canvas {
+            width: 100%;
+            height: 500px;
+            background: rgba(15, 23, 42, 0.3);
+            border-radius: 1rem;
+            margin-bottom: 2rem;
+            border: 1px solid var(--border-color);
+            display: block;
+        }
+
+        .glass-card {
+            background: var(--card-bg-color);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid var(--border-color);
+            border-radius: 1.5rem;
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+            transition: all 0.3s ease;
+        }
+
+        .glass-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 12px 40px 0 rgba(0, 0, 0, 0.45), 0 0 20px -5px var(--glow-color-cyan);
+        }
+
+        .section-title {
+            font-size: 2.5rem;
+            font-weight: 800;
+            letter-spacing: -0.025em;
+            background: -webkit-linear-gradient(45deg, #22d3ee, #38bdf8);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .btn-primary {
+            background: linear-gradient(to right, #06b6d4, #0ea5e9);
+            color: white;
+            border: none;
+            padding: 0.75rem 1.5rem;
+            border-radius: 0.5rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 0 20px rgba(6, 182, 212, 0.5);
+        }
+
+        .btn-primary:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .input-field {
+            background: rgba(30, 41, 59, 0.5);
+            border: 1px solid var(--border-color);
+            color: #cbd5e1;
+            padding: 0.75rem;
+            border-radius: 0.5rem;
+            font-family: 'Inter', sans-serif;
+        }
+
+        .input-field:focus {
+            outline: none;
+            border-color: var(--glow-color-cyan);
+            box-shadow: 0 0 10px rgba(6, 182, 212, 0.3);
+        }
+
+        .status-badge {
+            display: inline-block;
+            padding: 0.5rem 1rem;
+            border-radius: 9999px;
+            font-size: 0.875rem;
+            font-weight: 600;
+        }
+
+        .status-success {
+            background: rgba(16, 185, 129, 0.2);
+            color: #10b981;
+            border: 1px solid rgba(16, 185, 129, 0.5);
+        }
+
+        .status-danger {
+            background: rgba(239, 68, 68, 0.2);
+            color: #ef4444;
+            border: 1px solid rgba(239, 68, 68, 0.5);
+        }
+
+        .status-warning {
+            background: rgba(245, 158, 11, 0.2);
+            color: #f59e0b;
+            border: 1px solid rgba(245, 158, 11, 0.5);
+        }
+
+        .step-indicator {
+            display: flex;
+            gap: 1rem;
+            margin-bottom: 2rem;
+            flex-wrap: wrap;
+        }
+
+        .step-badge {
+            padding: 0.5rem 1rem;
+            border-radius: 0.5rem;
+            font-weight: 600;
+            font-size: 0.875rem;
+            background: rgba(148, 163, 184, 0.1);
+            color: #94a3b8;
+            border: 1px solid rgba(148, 163, 184, 0.2);
+            transition: all 0.3s ease;
+        }
+
+        .step-badge.active {
+            background: linear-gradient(135deg, rgba(6, 182, 212, 0.2), rgba(14, 165, 233, 0.2));
+            color: #06b6d4;
+            border-color: rgba(6, 182, 212, 0.5);
+        }
+
+        .code-block {
+            background: rgba(15, 23, 42, 0.8);
+            border: 1px solid var(--border-color);
+            border-radius: 0.5rem;
+            padding: 1rem;
+            font-family: 'Courier New', monospace;
+            font-size: 0.875rem;
+            overflow-x: auto;
+            color: #4ade80;
+        }
+
+        .photon {
+            position: absolute;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background: radial-gradient(circle at 30% 30%, #06b6d4, #0ea5e9);
+            box-shadow: 0 0 10px 2px rgba(6, 182, 212, 0.6);
+            pointer-events: none;
+        }
+
+        .photon.disturbed {
+            background: radial-gradient(circle at 30% 30%, #ef4444, #dc2626);
+            box-shadow: 0 0 10px 2px rgba(239, 68, 68, 0.6);
+        }
+
+        .qber-graph {
+            background: rgba(15, 23, 42, 0.5);
+            border: 1px solid var(--border-color);
+            border-radius: 0.5rem;
+            padding: 1.5rem;
+            margin-top: 1rem;
+        }
+
+        .transaction-log {
+            background: rgba(15, 23, 42, 0.5);
+            border: 1px solid var(--border-color);
+            border-radius: 0.5rem;
+            padding: 1rem;
+            max-height: 300px;
+            overflow-y: auto;
+            font-family: 'Courier New', monospace;
+            font-size: 0.875rem;
+        }
+
+        .log-entry {
+            padding: 0.5rem 0;
+            border-bottom: 1px solid rgba(148, 163, 184, 0.1);
+        }
+
+        .log-entry:last-child {
+            border-bottom: none;
+        }
+
+        .log-success {
+            color: #10b981;
+        }
+
+        .log-error {
+            color: #ef4444;
+        }
+
+        .log-warning {
+            color: #f59e0b;
+        }
+
+        .log-info {
+            color: #06b6d4;
+        }
+
+        .comparison-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 1rem;
+        }
+
+        .comparison-table th,
+        .comparison-table td {
+            padding: 1rem;
+            text-align: left;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .comparison-table th {
+            background: rgba(6, 182, 212, 0.1);
+            font-weight: 600;
+            color: #06b6d4;
+        }
+
+        .comparison-table tr:hover {
+            background: rgba(6, 182, 212, 0.05);
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0px); }
+            50% { transform: translateY(-10px); }
+        }
+
+        .floating {
+            animation: float 3s ease-in-out infinite;
+        }
+    </style>
+</head>
+<body class="antialiased">
+    <canvas id="neural-canvas"></canvas>
+
+    <!-- Navigation Bar -->
+    <nav class="border-b border-slate-700 bg-slate-900/30 backdrop-blur sticky top-0 z-40">
+        <div class="max-w-7xl mx-auto px-4 py-4 flex items-center justify-between">
+            <a href="./Final.html" class="text-cyan-300 font-bold text-lg hover:text-cyan-200">← Back to Home</a>
+            <h1 class="text-2xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-cyan-300 to-blue-500">🏦 Banking Secure System</h1>
+            <div class="w-24"></div>
+        </div>
+    </nav>
+
+    <div class="max-w-7xl mx-auto px-4 py-12 space-y-12">
+
+        <!-- Hero Section -->
+        <section class="text-center mb-12">
+            <h2 class="section-title mb-4">Quantum Banking in Action</h2>
+            <p class="text-lg text-slate-400 max-w-3xl mx-auto">
+                Experience a complete 3D simulation of how Quantum Key Distribution secures modern ATM transactions against future quantum threats.
+            </p>
+        </section>
+
+        <!-- Step 1: ATM Interface -->
+        <section class="space-y-6">
+            <div class="flex items-center gap-3 mb-6">
+                <span style="font-size: 2rem;">📱</span>
+                <h3 class="text-2xl font-bold text-white">Step 1: ATM Transaction Interface</h3>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <!-- ATM Input Panel -->
+                <div class="glass-card p-8">
+                    <h4 class="text-xl font-bold text-cyan-300 mb-6">Customer ATM Terminal</h4>
+                    
+                    <div class="space-y-4 mb-8">
+                        <div>
+                            <label class="block text-slate-300 font-semibold mb-2">Enter PIN:</label>
+                            <input type="password" id="pin-input" class="input-field w-full" placeholder="1234" maxlength="4">
+                        </div>
+
+                        <div>
+                            <label class="block text-slate-300 font-semibold mb-2">Withdrawal Amount ($):</label>
+                            <input type="number" id="amount-input" class="input-field w-full" placeholder="500" min="10" max="5000">
+                        </div>
+
+                        <div class="flex items-center space-x-3 p-4 bg-slate-800 bg-opacity-30 rounded">
+                            <input type="checkbox" id="hacker-toggle" class="w-5 h-5 cursor-pointer">
+                            <label for="hacker-toggle" class="text-slate-300 font-semibold cursor-pointer flex-grow">
+                                Simulate Hacker Attack
+                            </label>
+                        </div>
+                    </div>
+
+                    <button id="initiate-btn" class="btn-primary w-full">
+                        Initiate Secure Transaction
+                    </button>
+                </div>
+
+                <!-- Status Panel -->
+                <div class="glass-card p-8">
+                    <h4 class="text-xl font-bold text-cyan-300 mb-6">System Status</h4>
+                    
+                    <div class="space-y-4">
+                        <div>
+                            <p class="text-slate-400 font-semibold mb-2">Overall Status:</p>
+                            <div id="overall-status" class="status-badge status-warning">Idle</div>
+                        </div>
+
+                        <div>
+                            <p class="text-slate-400 font-semibold mb-2">Connection:</p>
+                            <div id="connection-status" class="status-badge status-warning">Not Connected</div>
+                        </div>
+
+                        <div>
+                            <p class="text-slate-400 font-semibold mb-2">Intrusion Detection:</p>
+                            <div id="intrusion-status" class="status-badge status-success">No Intrusion</div>
+                        </div>
+
+                        <div>
+                            <p class="text-slate-400 font-semibold mb-2">QBER Value:</p>
+                            <div id="qber-display" class="text-2xl font-bold text-cyan-300">0%</div>
+                            <p class="text-xs text-slate-500 mt-1">Threshold: 11%</p>
+                        </div>
+
+                        <div>
+                            <p class="text-slate-400 font-semibold mb-2">Key Status:</p>
+                            <div id="key-status" class="status-badge status-warning">Not Generated</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Step 2: 3D Visualization -->
+        <section class="space-y-6">
+            <div class="flex items-center gap-3 mb-6">
+                <span style="font-size: 2rem;">🎬</span>
+                <h3 class="text-2xl font-bold text-white">Step 2: Quantum Key Distribution Visualization</h3>
+            </div>
+
+            <canvas id="banking-canvas"></canvas>
+
+            <div class="step-indicator">
+                <span class="step-badge active" id="step-1-badge">① QKD Start</span>
+                <span class="step-badge" id="step-2-badge">② Photon Transmission</span>
+                <span class="step-badge" id="step-3-badge">③ Key Generation</span>
+                <span class="step-badge" id="step-4-badge">④ Encryption</span>
+                <span class="step-badge" id="step-5-badge">⑤ Bank Response</span>
+            </div>
+        </section>
+
+        <!-- Step 3: QBER Monitoring -->
+        <section class="space-y-6">
+            <div class="flex items-center gap-3 mb-6">
+                <span style="font-size: 2rem;">📊</span>
+                <h3 class="text-2xl font-bold text-white">Step 3: QBER Monitoring & Eavesdropper Detection</h3>
+            </div>
+
+            <div class="glass-card p-8">
+                <p class="text-slate-300 mb-6">
+                    <strong>QBER (Quantum Bit Error Rate)</strong> measures quantum errors. If QBER > 11%, an eavesdropper is likely present.
+                </p>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                    <!-- QBER Graph -->
+                    <div class="qber-graph">
+                        <h4 class="text-cyan-300 font-semibold mb-4">Real-time QBER Graph</h4>
+                        <canvas id="qber-chart" height="250"></canvas>
+                    </div>
+
+                    <!-- Logic Display -->
+                    <div>
+                        <h4 class="text-cyan-300 font-semibold mb-4">QBER Logic (Python)</h4>
+                        <div class="code-block">
+                            <pre>QBER_THRESHOLD = 0.11
+
+if qber > QBER_THRESHOLD:
+    print("⚠ Secure Channel Compromised")
+    abort_transaction = True
+else:
+    print("✓ Secure Key Generated")
+    abort_transaction = False</pre>
+                        </div>
+                        <p class="text-slate-400 text-sm mt-4">
+                            Current QBER: <span id="qber-percentage" class="text-cyan-300 font-bold">0%</span>
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Step 4: Encryption & Decryption -->
+        <section class="space-y-6">
+            <div class="flex items-center gap-3 mb-6">
+                <span style="font-size: 2rem;">🔒</span>
+                <h3 class="text-2xl font-bold text-white">Step 4: AES Encryption Process</h3>
+            </div>
+
+            <div class="glass-card p-8">
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <!-- Original Message -->
+                    <div>
+                        <h4 class="text-cyan-300 font-semibold mb-4">Original Message</h4>
+                        <div class="code-block text-center py-8">
+                            <p class="text-sm">Withdraw: $<span id="display-amount">500</span></p>
+                        </div>
+                    </div>
+
+                    <!-- Encryption Arrow -->
+                    <div class="flex items-center justify-center">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-12 w-12 text-cyan-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 5l7 7-7 7M5 5l7 7-7 7" />
+                        </svg>
+                    </div>
+
+                    <!-- Encrypted Message -->
+                    <div>
+                        <h4 class="text-cyan-300 font-semibold mb-4">Encrypted Data (AES-256)</h4>
+                        <div class="code-block text-xs break-all" id="encrypted-display">
+                            Not encrypted yet
+                        </div>
+                    </div>
+                </div>
+
+                <div class="mt-8 pt-8 border-t border-slate-700">
+                    <h5 class="text-cyan-300 font-semibold mb-4">AES Encryption Code</h5>
+                    <div class="code-block">
+                        <pre>from Crypto.Cipher import AES
+from Crypto.Util.Padding import pad
+
+key = secure_key_bytes  # from QKD
+cipher = AES.new(key, AES.MODE_CBC)
+
+message = f"Withdraw:{amount}"
+ct_bytes = cipher.encrypt(
+    pad(message.encode(), AES.block_size)
+)</pre>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Step 5: Comparison Table -->
+        <section class="space-y-6">
+            <div class="flex items-center gap-3 mb-6">
+                <span style="font-size: 2rem;">📈</span>
+                <h3 class="text-2xl font-bold text-white">Step 6: Classical vs Quantum-Safe Comparison</h3>
+            </div>
+
+            <div class="glass-card p-8 overflow-x-auto">
+                <table class="comparison-table">
+                    <thead>
+                        <tr style="background: rgba(6, 182, 212, 0.1);">
+                            <th style="color: #06b6d4;">Feature</th>
+                            <th style="color: #ef4444;">Classical ATM (RSA)</th>
+                            <th style="color: #10b981;">Quantum-Safe ATM (QKD)</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>Key Exchange Method</td>
+                            <td style="color: #cbd5e1;">RSA (Mathematical)</td>
+                            <td style="color: #10b981;">QKD (Physics-based)</td>
+                        </tr>
+                        <tr>
+                            <td>Intrusion Detection</td>
+                            <td style="color: #ef4444;">❌ No detection</td>
+                            <td style="color: #10b981;">✅ Instant detection</td>
+                        </tr>
+                        <tr>
+                            <td>Quantum-Safe</td>
+                            <td style="color: #ef4444;">❌ Vulnerable to quantum attacks</td>
+                            <td style="color: #10b981;">✅ Quantum-resistant</td>
+                        </tr>
+                        <tr>
+                            <td>QBER Monitoring</td>
+                            <td style="color: #cbd5e1;">N/A</td>
+                            <td style="color: #10b981;">✅ Real-time monitoring</td>
+                        </tr>
+                        <tr>
+                            <td>Data Encryption</td>
+                            <td style="color: #cbd5e1;">AES (same as QKD)</td>
+                            <td style="color: #10b981;">AES (with quantum-safe key)</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+        <!-- Step 7: Transaction Log -->
+        <section class="space-y-6">
+            <div class="flex items-center gap-3 mb-6">
+                <span style="font-size: 2rem;">📜</span>
+                <h3 class="text-2xl font-bold text-white">Step 7: Real-Time Transaction Log</h3>
+            </div>
+
+            <div class="glass-card p-8">
+                <div class="transaction-log" id="transaction-log">
+                    <p class="text-slate-500 italic">Transaction log appears here...</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- Step 8: Final Result -->
+        <section class="space-y-6 mb-12">
+            <div class="flex items-center gap-3 mb-6">
+                <span style="font-size: 2rem;">🏆</span>
+                <h3 class="text-2xl font-bold text-white">Step 8: Transaction Result</h3>
+            </div>
+
+            <div class="glass-card p-8">
+                <div class="text-center">
+                    <div id="result-container" class="hidden">
+                        <p class="text-6xl mb-4" id="result-icon">🔒</p>
+                        <p class="text-3xl font-bold text-white mb-4" id="result-title">Awaiting Transaction</p>
+                        <p class="text-lg text-slate-300 mb-8" id="result-message">Click "Initiate Secure Transaction" to begin</p>
+                        <div class="space-y-3" id="result-details">
+                            <!-- Details populated by JavaScript -->
+                        </div>
+                    </div>
+                    <div id="idle-message" class="py-12">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-20 w-20 mx-auto text-slate-500 mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                        </svg>
+                        <p class="text-slate-400 text-lg">Ready for secure transaction...</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+    </div>
+
+    <footer class="text-center p-8 text-slate-500 border-t border-slate-700">
+        <p>Banking Secure System - Quantum Key Distribution Simulation</p>
+    </footer>
+
+    <script>
+        // --- Global State ---
+        const QBER_THRESHOLD = 0.11;
+        let simulating = false;
+        let qberValues = [];
+        let qberChart = null;
+        const transactionLog = [];
+
+        const synth = new Tone.PolySynth(Tone.Synth, {
+            oscillator: { type: "fmsine" },
+            envelope: { attack: 0.01, decay: 0.1, sustain: 0.1, release: 0.5 },
+        }).toDestination();
+
+        function playSound(note) {
+            if (Tone.context.state === 'running') {
+                synth.triggerAttackRelease(note, "8n");
+            }
+        }
+
+        function addLog(message, type = 'info') {
+            const timestamp = new Date().toLocaleTimeString();
+            transactionLog.push({ timestamp, message, type });
+            updateTransactionLog();
+        }
+
+        function updateTransactionLog() {
+            const logDiv = document.getElementById('transaction-log');
+            if (transactionLog.length === 0) {
+                logDiv.innerHTML = '<p class="text-slate-500 italic">Transaction log appears here...</p>';
+                return;
+            }
+            logDiv.innerHTML = transactionLog.map(log => 
+                `<div class="log-entry log-${log.type}">[${log.timestamp}] ${log.message}</div>`
+            ).join('');
+            logDiv.scrollTop = logDiv.scrollHeight;
+        }
+
+        // --- Three.js Setup for Banking Canvas ---
+        const bankingCanvas = document.getElementById('banking-canvas');
+        const scene = new THREE.Scene();
+        const camera = new THREE.PerspectiveCamera(75, bankingCanvas.clientWidth / bankingCanvas.clientHeight, 0.1, 1000);
+        const renderer = new THREE.WebGLRenderer({ canvas: bankingCanvas, alpha: true, antialias: true });
+        
+        // Set initial size
+        const resizeRendererToDisplaySize = () => {
+            const width = bankingCanvas.clientWidth;
+            const height = bankingCanvas.clientHeight;
+            const needResize = bankingCanvas.width !== width || bankingCanvas.height !== height;
+            if (needResize) {
+                renderer.setSize(width, height, false);
+            }
+            return needResize;
+        };
+        
+        resizeRendererToDisplaySize();
+        renderer.setClearColor(0x000000, 0.1);
+
+        camera.position.z = 8;
+
+        // Add lighting
+        const light = new THREE.PointLight(0x06b6d4, 1.5);
+        light.position.set(5, 5, 5);
+        scene.add(light);
+
+        const ambientLight = new THREE.AmbientLight(0xffffff, 0.3);
+        scene.add(ambientLight);
+
+        // Create ATM and Bank components
+        const atmGeometry = new THREE.BoxGeometry(1.5, 2.5, 0.5);
+        const atmMaterial = new THREE.MeshPhongMaterial({ color: 0x0ea5e9 });
+        const atm = new THREE.Mesh(atmGeometry, atmMaterial);
+        atm.position.x = -3;
+        scene.add(atm);
+
+        const bankGeometry = new THREE.BoxGeometry(1.5, 2.5, 0.5);
+        const bankMaterial = new THREE.MeshPhongMaterial({ color: 0x10b981 });
+        const bank = new THREE.Mesh(bankGeometry, bankMaterial);
+        bank.position.x = 3;
+        scene.add(bank);
+
+        // QKD Module
+        const qkdGeometry = new THREE.SphereGeometry(0.6, 32, 32);
+        const qkdMaterial = new THREE.MeshPhongMaterial({ color: 0xf59e0b, wireframe: false });
+        const qkd = new THREE.Mesh(qkdGeometry, qkdMaterial);
+        qkd.position.y = 1;
+        scene.add(qkd);
+
+        // Encryption Module
+        const encGeometry = new THREE.BoxGeometry(0.8, 0.8, 0.8);
+        const encMaterial = new THREE.MeshPhongMaterial({ color: 0xd946ef });
+        const encryption = new THREE.Mesh(encGeometry, encMaterial);
+        encryption.position.y = -1;
+        scene.add(encryption);
+
+        // Photon particles group
+        const photonsGroup = new THREE.Group();
+        scene.add(photonsGroup);
+
+        let photonCount = 12;
+        let photons = [];
+
+        function createPhoton(x, y, z) {
+            const geometry = new THREE.SphereGeometry(0.15, 16, 16);
+            const material = new THREE.MeshPhongMaterial({ 
+                color: 0x06b6d4,
+                emissive: 0x06b6d4,
+                emissiveIntensity: 0.8
+            });
+            const photon = new THREE.Mesh(geometry, material);
+            photon.position.set(x, y, z);
+            photon.velocity = new THREE.Vector3(
+                (Math.random() - 0.5) * 2,
+                (Math.random() - 0.5) * 2,
+                (Math.random() - 0.5) * 2
+            );
+            photonsGroup.add(photon);
+            photons.push(photon);
+            return photon;
+        }
+
+        function animatePhotons() {
+            photons.forEach((photon, index) => {
+                photon.position.add(photon.velocity);
+                photon.rotation.x += 0.01;
+                photon.rotation.y += 0.01;
+
+                // Bounce off walls
+                if (photon.position.x > 5) photon.velocity.x *= -1;
+                if (photon.position.x < -5) photon.velocity.x *= -1;
+                if (photon.position.y > 3) photon.velocity.y *= -1;
+                if (photon.position.y < -3) photon.velocity.y *= -1;
+            });
+        }
+
+        function updateAuroraFrame() {
+            if (auroraCtx && auroraCanvas && particles.length > 0) {
+                auroraCtx.clearRect(0, 0, auroraCanvas.width, auroraCanvas.height);
+                particles.forEach(p => {
+                    p.x += p.vx;
+                    p.y += p.vy;
+
+                    if(p.x < 0 || p.x > auroraCanvas.width) p.vx *= -1;
+                    if(p.y < 0 || p.y > auroraCanvas.height) p.vy *= -1;
+
+                    auroraCtx.beginPath();
+                    auroraCtx.arc(p.x, p.y, p.radius, 0, Math.PI * 2);
+                    auroraCtx.fillStyle = p.color;
+                    auroraCtx.fill();
+                });
+            }
+        }
+
+        let animationFrameId = null;
+
+        function render() {
+            animationFrameId = requestAnimationFrame(render);
+            
+            // Update 3D components
+            atm.rotation.y += 0.005;
+            bank.rotation.y += 0.005;
+            qkd.rotation.x += 0.01;
+            qkd.rotation.y += 0.01;
+            encryption.rotation.x += 0.01;
+            encryption.rotation.z += 0.01;
+            
+            // Animate photons
+            animatePhotons();
+            
+            // Render Three.js scene
+            renderer.render(scene, camera);
+            
+            // Update aurora background
+            updateAuroraFrame();
+        }
+        render();
+
+        // --- QBER Chart Setup ---
+        function initializeQBERChart() {
+            const ctx = document.getElementById('qber-chart').getContext('2d');
+            if (qberChart) qberChart.destroy();
+            qberChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: [],
+                    datasets: [{
+                        label: 'QBER (%)',
+                        data: [],
+                        borderColor: '#06b6d4',
+                        backgroundColor: 'rgba(6, 182, 212, 0.1)',
+                        tension: 0.4,
+                        fill: true,
+                        pointRadius: 3,
+                        pointBackgroundColor: '#06b6d4'
+                    }, {
+                        label: 'Threshold (11%)',
+                        data: [],
+                        borderColor: '#ef4444',
+                        borderDash: [5, 5],
+                        fill: false,
+                        pointRadius: 0
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            labels: { color: '#cbd5e1' }
+                        }
+                    },
+                    scales: {
+                        y: {
+                            min: 0,
+                            max: 20,
+                            ticks: { color: '#cbd5e1' },
+                            grid: { color: 'rgba(148, 163, 184, 0.1)' }
+                        },
+                        x: {
+                            ticks: { color: '#cbd5e1' },
+                            grid: { color: 'rgba(148, 163, 184, 0.1)' }
+                        }
+                    }
+                }
+            });
+        }
+
+        initializeQBERChart();
+
+        function updateQBERChart(newQBER) {
+            if (!qberChart) return;
+            qberValues.push(newQBER);
+            const labels = qberChart.data.labels;
+            labels.push(`${labels.length}`);
+            qberChart.data.datasets[0].data.push(newQBER * 100);
+            qberChart.data.datasets[1].data.push(11);
+            if (labels.length > 20) {
+                labels.shift();
+                qberChart.data.datasets[0].data.shift();
+                qberChart.data.datasets[1].data.shift();
+            }
+            qberChart.update();
+        }
+
+        // --- Transaction Simulation ---
+        let hackerActive = false;
+
+        document.getElementById('initiate-btn').addEventListener('click', async () => {
+            if (simulating) return;
+            Tone.start();
+
+            const pin = document.getElementById('pin-input').value;
+            const amount = document.getElementById('amount-input').value;
+            hackerActive = document.getElementById('hacker-toggle').checked;
+
+            if (!pin || !amount) {
+                alert('Please enter PIN and Amount');
+                return;
+            }
+
+            simulating = true;
+            transactionLog.length = 0;
+            qberValues = [];
+            qberChart.data.labels = [];
+            qberChart.data.datasets[0].data = [];
+            qberChart.data.datasets[1].data = [];
+            qberChart.update();
+
+            document.getElementById('overall-status').textContent = 'Processing...';
+            document.getElementById('overall-status').className = 'status-badge status-warning';
+            document.getElementById('display-amount').textContent = amount;
+
+            // Clear photons properly
+            const photonsToRemove = [...photonsGroup.children];
+            photonsToRemove.forEach(p => photonsGroup.remove(p));
+            photons = [];
+
+            addLog('🔐 ATM: Initiating secure transaction...', 'info');
+            addLog(`💰 Amount: $${amount}`, 'info');
+            if (hackerActive) {
+                addLog('⚠ Hacker: Eavesdropping attempt activated!', 'warning');
+            }
+
+            await new Promise(r => setTimeout(r, 1000));
+
+            // Step 1: QKD Start
+            addLog('📡 QKD Module: Starting BB84 protocol...', 'info');
+            updateStepIndicator(1);
+            playSound("C5");
+            await new Promise(r => setTimeout(r, 1000));
+
+            // Step 2: Photon Transmission
+            addLog('🔬 Photon Transmission: Sending 12 photons...', 'info');
+            updateStepIndicator(2);
+            
+            for (let i = 0; i < photonCount; i++) {
+                createPhoton(Math.random() * 4 - 2, Math.random() * 3 - 1.5, 0);
+                playSound("D5");
+                await new Promise(r => setTimeout(r, 200));
+            }
+
+            await new Promise(r => setTimeout(r, 1500));
+
+            // Step 3: Calculate QBER
+            addLog('📊 QKD: Calculating QBER...', 'info');
+            updateStepIndicator(3);
+
+            let qber;
+            if (hackerActive) {
+                qber = 0.05 + Math.random() * 0.15; // Higher QBER with hacker
+                addLog(`⚠ Detected quantum errors: ${(qber * 100).toFixed(2)}%`, 'warning');
+            } else {
+                qber = Math.random() * 0.08; // Lower QBER without hacker
+                addLog(`✓ Quantum errors (normal): ${(qber * 100).toFixed(2)}%`, 'success');
+            }
+
+            for (let i = 0; i < 10; i++) {
+                updateQBERChart(qber + (Math.random() - 0.5) * 0.02);
+                document.getElementById('qber-display').textContent = ((qber + (Math.random() - 0.5) * 0.02) * 100).toFixed(2) + '%';
+                document.getElementById('qber-percentage').textContent = ((qber + (Math.random() - 0.5) * 0.02) * 100).toFixed(2) + '%';
+                await new Promise(r => setTimeout(r, 300));
+            }
+
+            const finalQBER = qber;
+            document.getElementById('qber-display').textContent = (finalQBER * 100).toFixed(2) + '%';
+            document.getElementById('qber-percentage').textContent = (finalQBER * 100).toFixed(2) + '%';
+
+            // Check if secure
+            const isSecure = finalQBER < QBER_THRESHOLD;
+
+            if (!isSecure) {
+                addLog(`🚨 QBER exceeds threshold (${(finalQBER * 100).toFixed(2)}% > 11%)`, 'error');
+                addLog('❌ EAVESDROPPING DETECTED! Transaction aborted.', 'error');
+                updateStepIndicator(5);
+                showResult(false, finalQBER, amount);
+                simulating = false;
+                return;
+            }
+
+            addLog('✓ QBER within threshold - Channel is secure', 'success');
+
+            // Step 4: Key Generation and Encryption
+            updateStepIndicator(4);
+            addLog('🔑 QKD: Generating secure key...', 'success');
+            document.getElementById('key-status').textContent = 'Generated';
+            document.getElementById('key-status').className = 'status-badge status-success';
+            await new Promise(r => setTimeout(r, 800));
+
+            const encryptedData = btoa(`Withdraw:${amount}_PIN:${pin}`).substring(0, 44) + '...';
+            document.getElementById('encrypted-display').textContent = encryptedData;
+            addLog(`🔐 AES-256: Encrypting transaction...`, 'info');
+            playSound("G5");
+            await new Promise(r => setTimeout(r, 1000));
+
+            // Step 5: Bank Processing
+            updateStepIndicator(5);
+            addLog('🏦 Bank Server: Receiving encrypted data...', 'info');
+            await new Promise(r => setTimeout(r, 800));
+
+            addLog('🔓 Bank Server: Decrypting message...', 'info');
+            await new Promise(r => setTimeout(r, 800));
+
+            addLog('✓ Bank Server: Validating transaction...', 'info');
+            await new Promise(r => setTimeout(r, 800));
+
+            // Final approval
+            addLog(`✅ TRANSACTION APPROVED! Withdrawing $${amount}`, 'success');
+            
+            showResult(true, finalQBER, amount);
+            simulating = false;
+        });
+
+        function updateStepIndicator(step) {
+            for (let i = 1; i <= 5; i++) {
+                const badge = document.getElementById(`step-${i}-badge`);
+                if (i === step) {
+                    badge.classList.add('active');
+                } else {
+                    badge.classList.remove('active');
+                }
+            }
+        }
+
+        function showResult(success, qber, amount) {
+            const resultContainer = document.getElementById('result-container');
+            const idleMessage = document.getElementById('idle-message');
+            const resultIcon = document.getElementById('result-icon');
+            const resultTitle = document.getElementById('result-title');
+            const resultMessage = document.getElementById('result-message');
+            const resultDetails = document.getElementById('result-details');
+
+            idleMessage.classList.add('hidden');
+            resultContainer.classList.remove('hidden');
+
+            if (success) {
+                resultIcon.textContent = '✅';
+                resultTitle.textContent = 'Transaction Successful';
+                resultTitle.style.color = '#10b981';
+                resultMessage.textContent = 'Your withdrawal was processed securely using Quantum Key Distribution.';
+                resultDetails.innerHTML = `
+                    <div class="glass-card p-4 bg-green-500 bg-opacity-10 border-green-500 border">
+                        <p class="text-left"><strong class="text-green-400">Amount Withdrawn:</strong> $${amount}</p>
+                        <p class="text-left"><strong class="text-green-400">QBER Level:</strong> ${(qber * 100).toFixed(2)}% (Safe)</p>
+                        <p class="text-left"><strong class="text-green-400">Security Method:</strong> QKD + AES-256</p>
+                        <p class="text-left"><strong class="text-green-400">Intrusion Detection:</strong> No threats detected</p>
+                    </div>
+                `;
+                playSound("C6");
+            } else {
+                resultIcon.textContent = '❌';
+                resultTitle.textContent = 'Transaction Failed';
+                resultTitle.style.color = '#ef4444';
+                resultMessage.textContent = 'Eavesdropping detected! The transaction was automatically blocked.';
+                resultDetails.innerHTML = `
+                    <div class="glass-card p-4 bg-red-500 bg-opacity-10 border-red-500 border">
+                        <p class="text-left"><strong class="text-red-400">QBER Level:</strong> ${(qber * 100).toFixed(2)}% (Compromised)</p>
+                        <p class="text-left"><strong class="text-red-400">Status:</strong> ⚠ Eavesdropper detected</p>
+                        <p class="text-left"><strong class="text-red-400">Action Taken:</strong> Transaction aborted</p>
+                        <p class="text-left"><strong class="text-red-400">Security Feature:</strong> Built-in intrusion detection</p>
+                    </div>
+                `;
+                playSound("G3");
+            }
+
+            document.getElementById('overall-status').textContent = success ? 'Completed' : 'Failed';
+            document.getElementById('overall-status').className = `status-badge ${success ? 'status-success' : 'status-danger'}`;
+            document.getElementById('connection-status').textContent = 'Disconnected';
+            document.getElementById('connection-status').className = 'status-badge status-warning';
+            document.getElementById('intrusion-status').textContent = hackerActive && !success ? 'Intrusion Detected' : 'No Intrusion';
+            document.getElementById('intrusion-status').className = `status-badge ${(hackerActive && !success) ? 'status-danger' : 'status-success'}`;
+        }
+
+        // --- Aurora Background ---
+        const auroraCanvas = document.getElementById('neural-canvas');
+        const auroraCtx = auroraCanvas.getContext('2d');
+        let particles = [];
+
+        function initAurora() {
+            auroraCanvas.width = window.innerWidth;
+            auroraCanvas.height = window.innerHeight;
+            particles = [];
+            let numParticles = (window.innerWidth * window.innerHeight) / 25000;
+            for(let i = 0; i < numParticles; i++) {
+                particles.push({
+                    x: Math.random() * auroraCanvas.width,
+                    y: Math.random() * auroraCanvas.height,
+                    vx: (Math.random() - 0.5) * 0.3,
+                    vy: (Math.random() - 0.5) * 0.3,
+                    radius: Math.random() * 3 + 1,
+                    color: `rgba(6, 182, 212, ${Math.random() * 0.5 + 0.2})`
+                });
+            }
+        }
+
+        initAurora();
+
+        let resizeTimeout;
+        window.addEventListener('resize', () => {
+            clearTimeout(resizeTimeout);
+            resizeTimeout = setTimeout(() => {
+                initAurora();
+                const width = bankingCanvas.clientWidth;
+                const height = bankingCanvas.clientHeight;
+                renderer.setSize(width, height, false);
+                camera.aspect = width / height;
+                camera.updateProjectionMatrix();
+            }, 250);
+        });
+    </script>
+</body>
+</html>

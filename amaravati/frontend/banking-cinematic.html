@@ -1,0 +1,709 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Banking Secure System - 3D Cinematic</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.9.1/gsap.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.7.77/Tone.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&family=Roboto:wght@300;400&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Roboto', sans-serif;
+            margin: 0;
+            overflow-y: scroll;
+            background: #0a0e27;
+            color: #cbd5e1;
+        }
+
+        #container {
+            width: 100%;
+            height: 100vh;
+            position: fixed;
+            top: 0;
+            left: 0;
+            z-index: 0;
+        }
+
+        #hud {
+            font-family: 'Orbitron', sans-serif;
+            text-shadow: 0 0 8px rgba(0, 255, 255, 0.7);
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100vh;
+            pointer-events: none;
+            z-index: 10;
+        }
+
+        .hud-element {
+            backdrop-filter: blur(5px);
+            background: linear-gradient(rgba(0, 25, 50, 0.5), rgba(0, 15, 30, 0.7));
+            border: 1px solid rgba(0, 191, 255, 0.4);
+            box-shadow: 0 0 15px rgba(0, 191, 255, 0.2) inset;
+            border-radius: 0.5rem;
+        }
+
+        .content {
+            position: relative;
+            z-index: 20;
+            pointer-events: none;
+        }
+
+        .step {
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 4rem 2rem;
+        }
+
+        .step-card {
+            glass-effect: true;
+            background: rgba(15, 23, 42, 0.6);
+            border: 1px solid rgba(0, 191, 255, 0.3);
+            backdrop-filter: blur(10px);
+            border-radius: 1rem;
+            padding: 3rem;
+            max-width: 800px;
+            text-align: center;
+        }
+
+        .step-title {
+            font-size: 2.5rem;
+            font-weight: bold;
+            color: #00ffff;
+            margin-bottom: 1rem;
+            text-shadow: 0 0 20px rgba(0, 255, 255, 0.5);
+        }
+
+        .step-description {
+            font-size: 1.2rem;
+            color: #cbd5e1;
+            line-height: 1.8;
+            margin-bottom: 2rem;
+        }
+
+        .status-display {
+            display: flex;
+            justify-content: space-around;
+            margin-top: 2rem;
+            flex-wrap: wrap;
+            gap: 1.5rem;
+        }
+
+        .status-item {
+            background: rgba(30, 41, 59, 0.5);
+            border: 1px solid rgba(0, 191, 255, 0.3);
+            border-radius: 0.5rem;
+            padding: 1rem;
+            flex: 1;
+            min-width: 150px;
+        }
+
+        .status-label {
+            color: #94a3b8;
+            font-size: 0.9rem;
+            text-transform: uppercase;
+            margin-bottom: 0.5rem;
+        }
+
+        .status-value {
+            font-size: 1.8rem;
+            color: #00ffff;
+            font-weight: bold;
+        }
+
+        .status-value.error {
+            color: #ff6b6b;
+        }
+
+        .status-value.success {
+            color: #10b981;
+        }
+
+        .toggle-container {
+            pointer-events: auto;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 1rem;
+            margin-top: 2rem;
+        }
+
+        .switch {
+            position: relative;
+            display: inline-block;
+            width: 60px;
+            height: 34px;
+        }
+
+        .switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+
+        .slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: #444;
+            transition: 0.4s;
+            border-radius: 34px;
+        }
+
+        .slider:before {
+            position: absolute;
+            content: "";
+            height: 26px;
+            width: 26px;
+            left: 4px;
+            bottom: 4px;
+            background-color: white;
+            transition: 0.4s;
+            border-radius: 50%;
+        }
+
+        input:checked + .slider {
+            background-color: #ff4757;
+        }
+
+        input:checked + .slider:before {
+            transform: translateX(26px);
+        }
+
+        .mission-objective {
+            border-left: 4px solid #00bfff;
+        }
+
+        .photon {
+            position: absolute;
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background: #00ffff;
+            box-shadow: 0 0 10px #00ffff;
+        }
+
+        .photon.disturbed {
+            background: #ff6b6b;
+            box-shadow: 0 0 10px #ff6b6b;
+        }
+
+        #info-panel {
+            position: fixed;
+            bottom: 2rem;
+            right: 2rem;
+            background: rgba(15, 23, 42, 0.8);
+            border: 1px solid rgba(0, 191, 255, 0.4);
+            border-radius: 0.5rem;
+            padding: 1.5rem;
+            max-width: 300px;
+            backdrop-filter: blur(10px);
+            z-index: 30;
+        }
+
+        .info-label {
+            color: #00ffff;
+            font-size: 0.9rem;
+            text-transform: uppercase;
+            margin-bottom: 0.5rem;
+        }
+
+        .info-value {
+            font-size: 1.4rem;
+            color: #cbd5e1;
+            font-weight: bold;
+        }
+
+        .back-button {
+            position: fixed;
+            top: 2rem;
+            left: 2rem;
+            background: linear-gradient(135deg, #00bfff, #1e90ff);
+            color: white;
+            border: none;
+            padding: 0.75rem 1.5rem;
+            border-radius: 50px;
+            cursor: pointer;
+            font-weight: bold;
+            z-index: 40;
+            pointer-events: auto;
+            transition: all 0.3s ease;
+        }
+
+        .back-button:hover {
+            transform: scale(1.05);
+            box-shadow: 0 0 20px rgba(0, 191, 255, 0.6);
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 0.8; }
+            50% { opacity: 1; }
+        }
+
+        .pulse {
+            animation: pulse 1s infinite;
+        }
+    </style>
+</head>
+<body>
+    <div id="container"></div>
+
+    <!-- HUD Overlay -->
+    <div id="hud" class="text-cyan-300">
+        <button class="back-button" onclick="window.location.href='./Final.html'">← Back to Home</button>
+        
+        <!-- Step Title and Description -->
+        <div class="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 text-center">
+            <h1 class="step-title" id="step-title">Banking Secure System</h1>
+            <p class="step-description" id="step-description">Watch how Quantum Key Distribution protects banking transactions</p>
+        </div>
+
+        <!-- Info Panel -->
+        <div id="info-panel">
+            <div>
+                <div class="info-label">QBER</div>
+                <div class="info-value" id="qber-display">0%</div>
+            </div>
+            <div style="margin-top: 1rem;">
+                <div class="info-label">Status</div>
+                <div class="info-value" id="status-display" style="color: #10b981;">Secure</div>
+            </div>
+            <div style="margin-top: 1rem;">
+                <div class="info-label">Photons Sent</div>
+                <div class="info-value" id="photons-display">0/12</div>
+            </div>
+        </div>
+
+        <!-- Hacker Toggle -->
+        <div class="toggle-container">
+            <label style="color: #cbd5e1; font-weight: bold;">Simulate Hacker Attack:</label>
+            <label class="switch">
+                <input type="checkbox" id="eve-toggle">
+                <span class="slider"></span>
+            </label>
+        </div>
+    </div>
+
+    <!-- Scroll Content -->
+    <div class="content">
+        <!-- Step 1: Define Your Components (Interactive) -->
+        <div class="step">
+            <div class="step-card">
+                <div class="step-title">Step 1: Define Your Components</div>
+                
+                <div style="text-align: left; margin-top: 2rem; display: grid; grid-template-columns: 1fr 1fr; gap: 2rem;">
+                    <!-- ATM Terminal -->
+                    <div style="background: rgba(30, 41, 59, 0.5); border: 1px solid rgba(0, 191, 255, 0.3); border-radius: 0.5rem; padding: 1.5rem;">
+                        <div style="display: flex; align-items: center; margin-bottom: 1.5rem;">
+                            <span style="font-size: 1.5rem; margin-right: 0.5rem;">💳</span>
+                            <h3 style="color: #00ffff; font-weight: bold; margin: 0;">ATM Terminal (Frontend UI)</h3>
+                        </div>
+                        
+                        <p style="color: #cbd5e1; font-size: 0.9rem; margin-bottom: 1rem;">Simulate:</p>
+                        <div style="space-y: 1rem;">
+                            <div style="margin-bottom: 0.8rem;">
+                                <label style="color: #94a3b8; display: block; margin-bottom: 0.4rem; font-size: 0.85rem;">PIN:</label>
+                                <input type="password" id="sim-pin" placeholder="1234" maxlength="4" style="width: 100%; padding: 0.5rem; background: rgba(0, 0, 0, 0.3); border: 1px solid rgba(0, 191, 255, 0.3); border-radius: 0.25rem; color: #cbd5e1;">
+                            </div>
+                            <div style="margin-bottom: 0.8rem;">
+                                <label style="color: #94a3b8; display: block; margin-bottom: 0.4rem; font-size: 0.85rem;">Amount ($):</label>
+                                <input type="number" id="sim-amount" placeholder="500" min="10" max="5000" style="width: 100%; padding: 0.5rem; background: rgba(0, 0, 0, 0.3); border: 1px solid rgba(0, 191, 255, 0.3); border-radius: 0.25rem; color: #cbd5e1;">
+                            </div>
+                            <button id="sim-withdraw" style="width: 100%; padding: 0.6rem; background: linear-gradient(135deg, #00bfff, #1e90ff); color: white; border: none; border-radius: 0.25rem; font-weight: bold; cursor: pointer; transition: all 0.3s ease;" onclick="initiateTransaction()">
+                                Click "Withdraw"
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- QKD Module & Encryption -->
+                    <div>
+                        <div style="background: rgba(30, 41, 59, 0.5); border: 1px solid rgba(0, 191, 255, 0.3); border-radius: 0.5rem; padding: 1.5rem; margin-bottom: 1.5rem;">
+                            <div style="display: flex; align-items: center; margin-bottom: 1.5rem;">
+                                <span style="font-size: 1.5rem; margin-right: 0.5rem;">⚛️</span>
+                                <h3 style="color: #00ffff; font-weight: bold; margin: 0;">QKD Module</h3>
+                            </div>
+                            
+                            <p style="color: #cbd5e1; font-size: 0.9rem; margin-bottom: 1rem;">Your existing:</p>
+                            <ul style="color: #cbd5e1; font-size: 0.85rem; margin: 0; padding-left: 1.5rem;">
+                                <li>✓ Photon transmission simulation</li>
+                                <li>✓ QBER calculation</li>
+                                <li>✓ Eavesdropper toggle</li>
+                                <li>✓ IBM backend execution</li>
+                            </ul>
+                        </div>
+
+                        <div style="background: rgba(30, 41, 59, 0.5); border: 1px solid rgba(0, 191, 255, 0.3); border-radius: 0.5rem; padding: 1.5rem;">
+                            <div style="display: flex; align-items: center; margin-bottom: 1.5rem;">
+                                <span style="font-size: 1.5rem; margin-right: 0.5rem;">🔒</span>
+                                <h3 style="color: #00ffff; font-weight: bold; margin: 0;">Encryption Layer</h3>
+                            </div>
+                            
+                            <p style="color: #cbd5e1; font-size: 0.9rem; margin-bottom: 1rem;">Use:</p>
+                            <p style="color: #4ade80; font-size: 0.85rem; margin: 0; font-family: monospace;">AES (Python <strong>cryptography</strong> or <strong>pycryptodome</strong>)</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Bank Server -->
+                <div style="background: rgba(30, 41, 59, 0.5); border: 1px solid rgba(0, 191, 255, 0.3); border-radius: 0.5rem; padding: 1.5rem; margin-top: 1.5rem;">
+                    <div style="display: flex; align-items: center; margin-bottom: 1rem;">
+                        <span style="font-size: 1.5rem; margin-right: 0.5rem;">🏦</span>
+                        <h3 style="color: #00ffff; font-weight: bold; margin: 0;">Bank Server</h3>
+                    </div>
+                    
+                    <p style="color: #cbd5e1; font-size: 0.9rem; margin-bottom: 1rem;">Simulated backend:</p>
+                    <ul style="color: #cbd5e1; font-size: 0.85rem; margin: 0; padding-left: 1.5rem;">
+                        <li>✓ Decrypts message</li>
+                        <li>✓ Validates transaction</li>
+                        <li>✓ Sends approval</li>
+                    </ul>
+                </div>
+
+                <p style="margin-top: 2rem; color: #94a3b8; text-align: center;">↓ Enter PIN and Amount, then click "Withdraw" to begin the secure transaction ↓</p>
+            </div>
+        </div>
+
+        <!-- Step 2: Photon Transmission -->
+        <div class="step">
+            <div class="step-card">
+                <div class="step-title">Step 2: Photon Transmission</div>
+                <div class="step-description">
+                    12 photons are sent from ATM to Bank Server in random quantum states
+                </div>
+                <div class="status-display">
+                    <div class="status-item">
+                        <div class="status-label">Photons Sent</div>
+                        <div class="status-value pulse" id="photon-count">0/12</div>
+                    </div>
+                    <div class="status-item">
+                        <div class="status-label">Polarization</div>
+                        <div class="status-value">Random</div>
+                    </div>
+                </div>
+                <p style="margin-top: 2rem; color: #94a3b8;">Watch the 3D visualization as photons travel →</p>
+            </div>
+        </div>
+
+        <!-- Step 3: QBER Monitoring -->
+        <div class="step">
+            <div class="step-card">
+                <div class="step-title">Step 3: QBER Monitoring</div>
+                <div class="step-description">
+                    Quantum Bit Error Rate is calculated. If QBER > 11%, eavesdropping is detected!
+                </div>
+                <div class="status-display">
+                    <div class="status-item">
+                        <div class="status-label">Current QBER</div>
+                        <div class="status-value" id="step3-qber">0%</div>
+                    </div>
+                    <div class="status-item">
+                        <div class="status-label">Threshold</div>
+                        <div class="status-value">11%</div>
+                    </div>
+                    <div class="status-item">
+                        <div class="status-label">Status</div>
+                        <div class="status-value success" id="step3-status">Safe</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Step 4: Key Generation -->
+        <div class="step">
+            <div class="step-card">
+                <div class="step-title">Step 4: Secure Key Generated</div>
+                <div class="step-description">
+                    A quantum-safe encryption key is successfully generated
+                </div>
+                <div class="status-display">
+                    <div class="status-item">
+                        <div class="status-label">Key Length</div>
+                        <div class="status-value">256-bit</div>
+                    </div>
+                    <div class="status-item">
+                        <div class="status-label">Security</div>
+                        <div class="status-value success">Quantum-Safe</div>
+                    </div>
+                </div>
+                <p style="margin-top: 2rem; color: #10b981; font-weight: bold;">✓ Channel is secure and ready for encryption</p>
+            </div>
+        </div>
+
+        <!-- Step 5: Transaction Encryption -->
+        <div class="step">
+            <div class="step-card">
+                <div class="step-title">Step 5: Transaction Encrypted</div>
+                <div class="step-description">
+                    Customer's withdrawal request is encrypted using AES-256 with the QKD key
+                </div>
+                <div class="status-display">
+                    <div class="status-item">
+                        <div class="status-label">Encryption</div>
+                        <div class="status-value">AES-256</div>
+                    </div>
+                    <div class="status-item">
+                        <div class="status-label">Message</div>
+                        <div class="status-value" style="font-size: 1rem;">Withdraw: $500</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Step 6: Transaction Complete -->
+        <div class="step">
+            <div class="step-card">
+                <div class="step-title">Transaction Complete ✓</div>
+                <div class="step-description">
+                    The banking transaction was processed securely using Quantum Key Distribution
+                </div>
+                <div class="status-display">
+                    <div class="status-item">
+                        <div class="status-label">Status</div>
+                        <div class="status-value success">Approved</div>
+                    </div>
+                    <div class="status-item">
+                        <div class="status-label">Security Level</div>
+                        <div class="status-value">Quantum-Safe</div>
+                    </div>
+                    <div class="status-item">
+                        <div class="status-label">Intrusion</div>
+                        <div class="status-value success">None Detected</div>
+                    </div>
+                </div>
+                <p style="margin-top: 2rem; color: #10b981; font-weight: bold;">🏦 Your banking data is protected by the laws of physics!</p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let scene, camera, renderer, clock;
+        let atm, bank, qkdModule, photons = [];
+        let eveActive = false;
+        let currentStep = 0;
+
+        const synth = new Tone.PolySynth(Tone.Synth, {
+            oscillator: { type: "fmsine" },
+            envelope: { attack: 0.01, decay: 0.1, sustain: 0.1, release: 0.5 },
+        }).toDestination();
+
+        function playSound(note) {
+            if (Tone.context.state === 'running') {
+                synth.triggerAttackRelease(note, "8n");
+            }
+        }
+
+        // Three.js Setup
+        function init() {
+            scene = new THREE.Scene();
+            scene.background = new THREE.Color(0x000510);
+            scene.fog = new THREE.Fog(0x000510, 150, 400);
+
+            camera = new THREE.PerspectiveCamera(50, window.innerWidth / window.innerHeight, 0.1, 1000);
+            camera.position.set(0, 50, 120);
+
+            renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            renderer.setPixelRatio(window.devicePixelRatio);
+            renderer.shadowMap.enabled = true;
+            document.getElementById('container').appendChild(renderer.domElement);
+
+            clock = new THREE.Clock();
+
+            setupLighting();
+            setupEnvironment();
+            createModels();
+
+            document.getElementById('eve-toggle').addEventListener('change', (e) => {
+                eveActive = e.target.checked;
+                Tone.start();
+                playSound(eveActive ? "C3" : "C5");
+            });
+
+            window.addEventListener('resize', onWindowResize);
+            window.addEventListener('scroll', onScroll);
+
+            animate();
+        }
+
+        function setupLighting() {
+            scene.add(new THREE.AmbientLight(0x404080, 1));
+            const spotLight = new THREE.SpotLight(0xffffff, 1.2);
+            spotLight.position.set(0, 100, 50);
+            spotLight.angle = Math.PI / 5;
+            spotLight.penumbra = 0.5;
+            spotLight.castShadow = true;
+            scene.add(spotLight);
+        }
+
+        function setupEnvironment() {
+            const grid = new THREE.GridHelper(400, 40, 0x00ffff, 0x004444);
+            grid.material.opacity = 0.2;
+            grid.material.transparent = true;
+            scene.add(grid);
+        }
+
+        function createModels() {
+            // ATM
+            atm = new THREE.Group();
+            const atmGeometry = new THREE.BoxGeometry(20, 40, 10);
+            const atmMaterial = new THREE.MeshStandardMaterial({ color: 0x0ea5e9, metalness: 0.8, roughness: 0.2 });
+            const atmMesh = new THREE.Mesh(atmGeometry, atmMaterial);
+            atmMesh.position.x = -60;
+            atm.add(atmMesh);
+            scene.add(atm);
+
+            // Bank Server
+            bank = new THREE.Group();
+            const bankGeometry = new THREE.BoxGeometry(20, 40, 10);
+            const bankMaterial = new THREE.MeshStandardMaterial({ color: 0x10b981, metalness: 0.8, roughness: 0.2 });
+            const bankMesh = new THREE.Mesh(bankGeometry, bankMaterial);
+            bankMesh.position.x = 60;
+            bank.add(bankMesh);
+            scene.add(bank);
+
+            // QKD Module (center)
+            qkdModule = new THREE.Group();
+            const qkdGeometry = new THREE.SphereGeometry(10, 32, 32);
+            const qkdMaterial = new THREE.MeshStandardMaterial({ color: 0xf59e0b, emissive: 0xf59e0b, emissiveIntensity: 0.5 });
+            const qkdMesh = new THREE.Mesh(qkdGeometry, qkdMaterial);
+            qkdModule.add(qkdMesh);
+            scene.add(qkdModule);
+        }
+
+        function onScroll() {
+            const scrollPercent = window.scrollY / (document.documentElement.scrollHeight - window.innerHeight);
+            currentStep = Math.floor(scrollPercent * 6) + 1;
+
+            // Update step title and description
+            const titles = [
+                "Secure Channel Initiated",
+                "Photon Transmission",
+                "QBER Monitoring",
+                "Secure Key Generated",
+                "Transaction Encrypted",
+                "Transaction Complete"
+            ];
+
+            document.getElementById('step-title').textContent = `Step ${currentStep}: ${titles[currentStep - 1]}`;
+
+            // Animate camera based on scroll
+            const targetZ = 120 - scrollPercent * 80;
+            const targetY = 50 + scrollPercent * 30;
+            camera.position.z = THREE.MathUtils.lerp(camera.position.z, targetZ, 0.05);
+            camera.position.y = THREE.MathUtils.lerp(camera.position.y, targetY, 0.05);
+            camera.lookAt(0, 0, 0);
+
+            // Trigger step-specific animations
+            if (currentStep === 2) animatePhotonTransmission();
+            if (currentStep === 3) updateQBERDisplay();
+        }
+
+        function animatePhotonTransmission() {
+            const numPhotons = 12;
+            if (photons.length < numPhotons) {
+                const geometry = new THREE.SphereGeometry(2, 16, 16);
+                const color = eveActive ? 0xff6b6b : 0x06b6d4;
+                const material = new THREE.MeshBasicMaterial({ color });
+                const photon = new THREE.Mesh(geometry, material);
+
+                photon.position.copy(atm.position);
+                photon.velocity = new THREE.Vector3(
+                    (Math.random() - 0.5) * 2,
+                    (Math.random() - 0.5) * 2,
+                    2 + Math.random() * 1
+                );
+                photon.disturbance = eveActive ? Math.random() > 0.7 : false;
+
+                scene.add(photon);
+                photons.push(photon);
+
+                document.getElementById('photons-display').textContent = `${photons.length}/${numPhotons}`;
+                document.getElementById('photon-count').textContent = `${photons.length}/${numPhotons}`;
+
+                playSound("D5");
+            }
+
+            photons.forEach((photon, index) => {
+                photon.position.add(photon.velocity);
+                photon.rotation.x += 0.05;
+                photon.rotation.y += 0.05;
+
+                if (photon.disturbance) {
+                    photon.material.color.setHex(0xff6b6b);
+                }
+
+                // Check if reached bank
+                if (photon.position.distanceTo(bank.position) < 20) {
+                    scene.remove(photon);
+                    photons.splice(index, 1);
+                }
+            });
+        }
+
+        function updateQBERDisplay() {
+            let qber = Math.random() * 8;
+            if (eveActive) {
+                qber = 5 + Math.random() * 10; // Higher QBER when hacker is active
+            }
+
+            const qberPercent = Math.min(qber, 20).toFixed(2);
+            document.getElementById('qber-display').textContent = qberPercent + '%';
+            document.getElementById('step3-qber').textContent = qberPercent + '%';
+
+            const secure = qber < 11;
+            const statusElement = document.getElementById('step3-status');
+            const statusHUD = document.getElementById('status-display');
+
+            if (secure) {
+                statusElement.textContent = '✓ Safe';
+                statusElement.style.color = '#10b981';
+                statusHUD.textContent = 'Secure';
+                statusHUD.style.color = '#10b981';
+                playSound("C5");
+            } else {
+                statusElement.textContent = '⚠ Compromised';
+                statusElement.style.color = '#ff6b6b';
+                statusHUD.textContent = 'Intrusion!';
+                statusHUD.style.color = '#ff6b6b';
+                playSound("G2");
+            }
+        }
+
+        function animate() {
+            requestAnimationFrame(animate);
+
+            // Rotate models
+            atm.rotation.y += 0.003;
+            bank.rotation.y += 0.003;
+            qkdModule.rotation.x += 0.01;
+            qkdModule.rotation.y += 0.01;
+
+            // Animate photons
+            animatePhotonTransmission();
+
+            renderer.render(scene, camera);
+        }
+
+        function onWindowResize() {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        }
+
+        // Initialize on page load
+        document.addEventListener('DOMContentLoaded', () => {
+            Tone.start();
+            init();
+        });
+    </script>
+</body>
+</html>
